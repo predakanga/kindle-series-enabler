@@ -25,18 +25,28 @@ JSON. **A broken file would break KMC's patcher, and probably every search
 command.**
 
 The values include arguments (`/app/tools/switchChrome.sh kpp 2`). KMC's
-`/var/local/kmc/sbin/kpm.sh` passes on `$*`, so text typed after the
-command reaches the script. `kpm.sh` also:
+`/var/local/kmc/sbin/kpm.sh`:
 - `sleep 1`s first, to let the keyboard close;
-- runs the real work as root through KMC's `/var/local/kmc/bin/su -c`, so
-  the command isn't run as root by KPPMainApp (not checked which user it
-  is);
-- runs `kpm --fbink` to write progress on the screen;
-- runs `/usr/bin/xrefresh -d :0.0` afterwards, to repaint over the text.
+- runs `kpm --fbink $*` through KMC's `/var/local/kmc/bin/su -c`;
+- runs `/usr/bin/xrefresh -d :0.0` two seconds later, to repaint over the
+  text.
 
-**Open:** whether KPPMainApp reads the files once at startup or on every
-search. If only at startup, a new command works only after a reboot (or a
-`kppmainapp` restart). Testing that needs a root filesystem write.
+**Tested (2026-10-20)** by adding `";series": "/bin/sh
+/mnt/us/kse-cmdtest.sh"` to both files (backups in
+`/mnt/us/kse-kpp_*_cmds.json.bak`):
+- **KPPMainApp reads the files only at startup.** Typing `;series` in the
+  running app just searched the store. After `initctl restart kppmainapp`
+  it ran. So a new command needs a framework restart or a reboot. (Restart
+  `framework` rather than `kppmainapp`: the latter is reported as an
+  "Application Error".)
+- **Text after the command is passed as arguments:** `;series foo` ran
+  the script with `$1 = foo`. Plain `;series` passed none.
+- **It runs as root** (uid 0, gid `video`, groups `javausers`), as a child
+  of `/app/bin/KPPMainApp`, in `/`, with a minimal environment (`PATH`,
+  `LANG`, `LC_ALL`, `KINDLE_TZ`). So KMC's `su` isn't needed.
+- **Nothing repaints afterwards.** FBInk's line stayed on the screen until
+  something else redrew it. The first run's line was covered by the store
+  search results, the second's stayed. Hence `kpm.sh`'s `xrefresh`.
 
 ## Writing to the screen
 

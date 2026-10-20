@@ -106,7 +106,9 @@ index on GitHub Pages (`https://predakanga.github.io/kindle-series-enabler/repo.
 - **`pkill -f PATTERN` over SSH matches its own `sh -c` command line** and
   kills the session. Use a self-excluding pattern (`pgrep -f "[p]attern"`).
 - `initctl restart kppmainapp` pops an "Application Error" dialog (Close
-  at `tap.sh 75 57`), and isn't needed: the settings apply when the
-  Library redraws (go to Home and back).
+  at `tap.sh 75 57`); restart `framework` instead when a restart is
+  needed (for example, after changing the search-bar command files). The
+  grouping settings don't need one: they apply when the Library redraws
+  (go to Home and back).
 - KPM reports network failures only as a number: `(4)` is `KPM_CURL_ERROR`,
   which usually means Wi-Fi is down (screensaver).
