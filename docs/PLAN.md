@@ -114,10 +114,19 @@ nothing if their target is missing.
   `uninstall.sh`, `rootfs.sh`, `launch.sh`, `boot.sh`, `series.sh` and the
   upstart job. The version is in `Cargo.toml`, and the tooling and
   workflows are back to Wireless Sync's, with Zig for the Kindle build.
-  Not yet run on the device; the CI workflows haven't run yet either.
+  The CI workflows haven't run yet (they will on the next push).
 - ✅ The README: what it does, the risk, what it changes (2026-10-20).
-- An install, upgrade (from a temporary repository) and uninstall test on
-  the reference device.
+- ✅ Install, reboot, upgrade (from a temporary `file://` repository) and
+  uninstall on the reference device (2026-10-20), starting with no
+  override. Install added the marketplace and `;series` (both command
+  files, every entry kept in order), and showed the switch. At boot the job
+  logged "already listed". After the reboot `;series` and `;series status`
+  showed their output and repainted (`status`'s long lines are cut off,
+  accepted for a debugging command). The upgrade kept the record and left
+  the command files alone. Uninstall removed the override, `;series`, the
+  job and the files, and left grouping on. The root filesystem was
+  read-only after each step. Fixed along the way: an abort on a closed
+  stdout, `&gt;` in KPM's output, a multi-file `scp` crashing dropbear.
 - First release, **1.0.0** (developer, 2026-10-20; ask before publishing).
 
 ## Open questions
