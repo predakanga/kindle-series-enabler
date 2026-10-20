@@ -58,8 +58,10 @@ search. If only at startup, a new command works only after a reboot (or a
   `json_set(readfile(F), '$.";series"', V)` adds a key at the end, keeping
   the order of the others. `json_remove` of the same key gives back an
   object equal to `json(readfile(F))`. `json_pretty` (3.46+) is there too.
-  So the shell can edit the command files as JSON, without `jq` (which
-  isn't on the device).
+  So on this device the shell could edit the command files as JSON,
+  without `jq` (which isn't on the device). **But don't rely on it:** the
+  developer's earlier testing found older firmware whose `sqlite3` was
+  built without the JSON functions (2026-10-20).
 - `lipc-get-prop` and the other `lipc-*` tools are in `/usr/bin`.
 - No `python3` and no `jq`.
 - Permissions: `/var/local/appreg.db` and `/var/local/user_defaults.db` are
