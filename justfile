@@ -45,7 +45,9 @@ deploy: build-kindle
     ssh {{kindle_host}} "mkdir -p {{kindle_dir}}"
     # Copy under a temporary name, then rename over the old binary.
     scp -O -q target/{{kindle_target}}/release/kindle-series-enabler {{kindle_host}}:{{kindle_dir}}/kindle-series-enabler.new
-    scp -O -q package/boot.sh package/series.sh {{kindle_host}}:{{kindle_dir}}/
+    # One file per scp: the device's dropbear aborts on a multi-file copy here.
+    scp -O -q package/boot.sh {{kindle_host}}:{{kindle_dir}}/boot.sh
+    scp -O -q package/series.sh {{kindle_host}}:{{kindle_dir}}/series.sh
     ssh {{kindle_host}} "chmod 755 {{kindle_dir}}/kindle-series-enabler.new {{kindle_dir}}/boot.sh {{kindle_dir}}/series.sh && mv -f {{kindle_dir}}/kindle-series-enabler.new {{kindle_dir}}/kindle-series-enabler"
 
 # Run the deployed binary on the device, e.g. `just kse status`

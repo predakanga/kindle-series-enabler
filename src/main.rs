@@ -65,11 +65,22 @@ fn parse() -> Result<Option<Options>, lexopt::Error> {
     }))
 }
 
+/// println!, but a closed stdout (`status | head`) is ignored: println!
+/// panics, and with `panic = "abort"` that's a core dump, which the Kindle
+/// hands to Amazon's crash handler.
+macro_rules! out {
+    ($($arg:tt)*) => {{
+        use std::io::Write;
+        let _ = writeln!(std::io::stdout(), $($arg)*);
+    }};
+}
+
 fn main() -> ExitCode {
     match real_main() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("error: {e}");
+            use std::io::Write;
+            let _ = writeln!(std::io::stderr(), "error: {e}");
             ExitCode::FAILURE
         }
     }
@@ -77,21 +88,21 @@ fn main() -> ExitCode {
 
 fn real_main() -> kse::Result<()> {
     let Some(o) = parse().map_err(|e| format!("{e}\n{USAGE}"))? else {
-        println!("{USAGE}");
+        out!("{USAGE}");
         return Ok(());
     };
     let open = |writable| {
         Appreg::open(&o.appreg, writable).map_err(|e| format!("{}: {e}", o.appreg.display()))
     };
     match o.command.as_str() {
-        "apply" => println!("{}", grouping::apply(&open(true)?, &o.state)?),
-        "restore" => println!("{}", grouping::restore(&open(true)?, &o.state)?),
+        "apply" => out!("{}", grouping::apply(&open(true)?, &o.state)?),
+        "restore" => out!("{}", grouping::restore(&open(true)?, &o.state)?),
         "status" => {
-            println!("{}", Status::read(&open(false)?, &o.state)?);
+            out!("{}", Status::read(&open(false)?, &o.state)?);
             for (path, entry) in commands::check(&o.commands) {
                 match entry {
-                    Ok(entry) => println!("{}: {entry}", path.display()),
-                    Err(e) => println!("{e}"),
+                    Ok(entry) => out!("{}: {entry}", path.display()),
+                    Err(e) => out!("{e}"),
                 }
             }
         }
@@ -104,6 +115,6 @@ fn real_main() -> kse::Result<()> {
 
 fn report(changes: Vec<(PathBuf, Change)>) {
     for (path, change) in changes {
-        println!("{}: {change}", path.display());
+        out!("{}: {change}", path.display());
     }
 }

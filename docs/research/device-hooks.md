@@ -102,6 +102,30 @@ The values include arguments (`/app/tools/switchChrome.sh kpp 2`). KMC's
 
 ## Boot jobs
 
+- **Every framework start makes `/var/local` group-writable**
+  (`/etc/upstart/framework.conf`, seen 2026-10-20): for `/var/local`,
+  `/var/log`, `/var/lock` and `/var/run` it runs `chgrp -R javausers` and
+  `chmod -R g=u`, and sets `g+s` on every directory. Our files went from
+  `755 root:root` at install to `775 root:javausers` at the next boot (`644`
+  to `664`). It isn't the umask: the install left the right modes, and the
+  ctime is the boot. Immutable files (KMC's) escape it, and the same job
+  resets `/var/local/root` (Amazon's root-only folder, holding
+  `sysreg.db`) to group `root` straight afterwards. The framework user
+  (uid 9000) is in `javausers`. It doesn't matter on a KMC jailbreak:
+  KMC's `/var/local/kmc/bin/gandalf` (`su`) is setuid root and executable
+  by anyone, so a `javausers` process can already become root. Kindle
+  Wireless Sync's files get the same treatment.
+- **Core dumps go to Amazon's crash handler** (`core_pattern` is
+  `|/usr/bin/system_crash_handler %p %s %e %i`). For our aborts (a
+  `println!` into a closed pipe, 2026-10-20) it logged `Skipping:
+  kindle-series-enabler (no libstackdump.so)` and wrote nothing, but
+  aborting is still to be avoided (the binary is built with
+  `panic = "abort"`), so output errors are ignored.
+- **The device's dropbear aborts on a multi-file `scp -O`** into
+  `/var/local/kindle-series-enabler/` (2026-10-20: "Connection closed by
+  remote host", and `system_crash_handler … exe=dropbear signal=6`).
+  Single-file copies work, so `just deploy` copies one file at a time.
+
 - `/mnt/us` is a FUSE mount (`fsp`) over the userstore. Upstart's
   `filesystems_userstore` mounts it (and emits `mounted_userstore`) early,
   long before `framework_ready`, but nothing makes a `start on
