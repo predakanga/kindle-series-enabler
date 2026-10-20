@@ -1,0 +1,33 @@
+# CI: lint and test on every push to main and every pull request, and check
+# that the package still builds. The release workflow (release.yml) repeats
+# these checks before publishing.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      # shellcheck is preinstalled on ubuntu-latest; sqlite3 may not be.
+      - name: Install shellcheck and sqlite3
+        run: |
+          command -v shellcheck && command -v sqlite3 ||
+            { sudo apt-get update && sudo apt-get install -y shellcheck sqlite3; }
+      - run: just check
+      - run: just test
+      - run: just package
+      - run: tar -tzvf target/package/kindle-series-enabler.kpkg

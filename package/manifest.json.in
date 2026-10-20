@@ -1,0 +1,10 @@
+{
+  "manifest_version": 2,
+  "id": "kindle-series-enabler",
+  "name": "Kindle Series Enabler",
+  "author": "predakanga",
+  "description": "Turn on the Kindle library's series grouping where Amazon doesn't offer it.",
+  "version": [@VERSION@],
+  "dependencies": [],
+  "supported_platforms": ["kindlehf"]
+}
