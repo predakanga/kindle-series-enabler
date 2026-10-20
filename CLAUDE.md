@@ -16,7 +16,9 @@ AU marketplace. Other devices and firmware are best-effort.
 
 **Start with `docs/PLAN.md`**: phases, open questions and what comes next.
 Research is in `docs/research/` (`series-grouping-gate.md` for the
-setting, `kpm-packaging.md` for KPM). Decisions go in `docs/decisions/`.
+setting, `kpm-packaging.md` for KPM, `device-hooks.md` for search-bar
+commands, on-screen output and the tools on the device). Decisions go in
+`docs/decisions/`.
 
 ## Commands
 
