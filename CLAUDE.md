@@ -23,38 +23,54 @@ commands, on-screen output and the tools on the device). Decisions go in
 ## Commands
 
 ```bash
-just test                 # tests/series-grouping.sh against a fixture appreg.db (needs sqlite3)
-just check                # shellcheck every script
-just grouping [status|enable|disable]   # run package/series-grouping.sh on the Kindle
+just test                 # cargo test: fixture appreg.db and command files
+just check                # cargo fmt --check, clippy -D warnings, shellcheck
+just build-kindle         # static armv7 musl binary (cargo zigbuild; needs zig, cargo-zigbuild)
+just size-kindle          # its size (budget: under 5 MB; CI checks)
+just deploy               # copy the binary, boot.sh and series.sh to /var/local/kindle-series-enabler
+just kse [ARGS]           # run the deployed binary on the Kindle, e.g. `just kse status`
 just package              # build target/package/kindle-series-enabler.kpkg
 just kpm-install | kpm-uninstall   # install/remove the package with the device's own KPM
 just screensaver-off | screensaver-on   # keep the Kindle awake for long tests (Wi-Fi drops with it)
-just release X.Y.Z        # prepare a release: bump VERSION, date the changelog, commit (no push)
+just release X.Y.Z        # prepare a release: bump Cargo.toml, date the changelog, commit (no push)
 just publish-release [-y] # tag the prepared version and push main + tag (publishes; ask first)
 ```
 
-**Releases:** as in Wireless Sync (its ADR 0014). `just release X.Y.Z`
-(`tools/release.sh`) writes `VERSION`, moves the `Unreleased` entries in
-`CHANGELOG.md` under `## [X.Y.Z] - today`, updates the compare links and
-commits. It refuses a dirty tree, a branch other than `main`, a version
-that isn't newer, or an empty `Unreleased`. Show the developer the commit,
-then (after asking) `just publish-release -y` tags `vX.Y.Z` and pushes.
-`.github/workflows/release.yml` checks, tests and packages, publishes the
-GitHub release with the changelog section as notes, and rebuilds the KPM
-index on GitHub Pages (`https://predakanga.github.io/kindle-series-enabler/repo.json`).
+**Building for the Kindle:** `rusqlite`'s bundled SQLite is C, so the
+armv7 build uses `cargo zigbuild` (`brew install zig`, `cargo install
+cargo-zigbuild`; ADR 0004). Zig's linker warns that `-nostartfiles` is
+unused; that's harmless.
 
-**CI:** `.github/workflows/ci.yml` runs `just check`, `just test` and
-`just package` on pushes to `main` and on pull requests.
+**Releases:** as in Wireless Sync (its ADR 0014). `just release X.Y.Z`
+(`tools/release.sh`) bumps `Cargo.toml` and `Cargo.lock`, moves the
+`Unreleased` entries in `CHANGELOG.md` under `## [X.Y.Z] - today`, updates
+the compare links and commits. It refuses a dirty tree, a branch other than
+`main`, a version that isn't newer, or an empty `Unreleased`. Show the
+developer the commit, then (after asking) `just publish-release -y` tags
+`vX.Y.Z` and pushes. `.github/workflows/release.yml` checks, tests and
+packages, publishes the GitHub release with the changelog section as notes,
+and rebuilds the KPM index on GitHub Pages
+(`https://predakanga.github.io/kindle-series-enabler/repo.json`). The first
+release is 1.0.0.
+
+**CI:** `.github/workflows/ci.yml` runs `just check`, `cargo test` and
+`just package` (with Zig) on pushes to `main` and on pull requests.
 
 ## Layout
 
-- `package/`: what ships. `series-grouping.sh` does the work (`APPREG`
-  overrides the database path); `install.sh` and `uninstall.sh` are the KPM
-  hooks (drafts until PLAN Phase 2); `manifest.json.in` takes its version
-  from `VERSION`; `pages/index.html` is the Pages site template.
+- `src/`: the binary (ADR 0004). `appreg.rs` (the database), `grouping.rs`
+  (`apply`, `restore`, `status`; ADR 0001, 0003), `state.rs` (the record of
+  the last write), `commands.rs` (the `;series` search command), `main.rs`
+  (the command line; `apply` by default).
+- `package/`: what ships besides the binary. `install.sh` and `uninstall.sh`
+  are the KPM hooks (ADR 0003), with `rootfs.sh` for `mntroot`; `boot.sh`,
+  `series.sh` and `launch.sh` are the entry points (ADR 0002);
+  `upstart/kindle-series-enabler.conf` is the boot job; `manifest.json.in`
+  takes its version from `Cargo.toml`; `pages/index.html` is the Pages site
+  template.
 - `tools/`: packaging, release, changelog notes and the KPM index.
-- `tests/`: shell tests against a fixture `appreg.db` built from the
-  reference device's schema and values.
+- `tests/`: Rust tests against a fixture `appreg.db` built from the
+  reference device's schema and values, and fixture command files.
 
 ## Working process
 

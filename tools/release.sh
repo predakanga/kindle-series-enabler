@@ -4,11 +4,11 @@
 # anything is published. Modelled on Kindle Wireless Sync's tools/release.sh
 # (its ADR 0014).
 #
-#   tools/release.sh prepare X.Y.Z   write X.Y.Z to VERSION, move the
+#   tools/release.sh prepare X.Y.Z   bump Cargo.toml and Cargo.lock, move the
 #                                    Unreleased changelog entries under
 #                                    "## [X.Y.Z] - today", update the compare
 #                                    links, and commit. Nothing is pushed.
-#   tools/release.sh publish         tag the version in VERSION and push
+#   tools/release.sh publish         tag the version in Cargo.toml and push
 #                                    main and the tag, which runs the release
 #                                    workflow. Asks first; -y skips the prompt.
 set -eu
@@ -18,7 +18,9 @@ REPO_URL=https://github.com/predakanga/kindle-series-enabler
 
 die() { echo "release: $*" >&2; exit 1; }
 
-current_version() { tr -d '[:space:]' < VERSION; }
+current_version() {
+    sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1
+}
 
 require_clean_main() {
     [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || die "not on main"
@@ -49,7 +51,12 @@ prepare() {
     grep -q '^\[Unreleased\]: ' CHANGELOG.md || die "CHANGELOG.md has no [Unreleased] link"
     today=$(date +%Y-%m-%d)
 
-    echo "$version" > VERSION
+    # The first `version =` line is the package's own.
+    awk -v old="$old" -v new="$version" '
+        !done && $0 == "version = \"" old "\"" { print "version = \"" new "\""; done = 1; next }
+        { print }
+    ' Cargo.toml > Cargo.toml.new && mv Cargo.toml.new Cargo.toml
+    cargo update --workspace --offline --quiet
 
     # The first release has no earlier tag to compare with.
     awk -v v="$version" -v old="$old" -v today="$today" -v url="$REPO_URL" '
@@ -63,8 +70,9 @@ prepare() {
         { print }
     ' CHANGELOG.md > CHANGELOG.md.new && mv CHANGELOG.md.new CHANGELOG.md
 
+    [ "$(current_version)" = "$version" ] || die "Cargo.toml was not updated"
     tools/changelog-notes.sh "$version" >/dev/null
-    git commit -q -m "Release v$version" VERSION CHANGELOG.md
+    git commit -q -m "Release v$version" Cargo.toml Cargo.lock CHANGELOG.md
     git show --stat HEAD
     echo
     echo "Prepared v$version. Review it, then run \`just publish-release\`."

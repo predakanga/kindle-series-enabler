@@ -26,11 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check the tag matches VERSION
+      - name: Check the tag matches Cargo.toml
         run: |
-          version=$(tr -d '[:space:]' < VERSION)
+          version=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
           if [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match VERSION $version"
+            echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $version"
             exit 1
           fi
 
@@ -39,16 +39,33 @@ jobs:
           tools/changelog-notes.sh "${GITHUB_REF_NAME#v}" > notes.md
           cat notes.md
 
-      - uses: extractions/setup-just@v4
-      - name: Install shellcheck and sqlite3
+      - name: Install the Rust target and tools
         run: |
-          command -v shellcheck && command -v sqlite3 ||
-            { sudo apt-get update && sudo apt-get install -y shellcheck sqlite3; }
+          rustup target add armv7-unknown-linux-musleabihf
+          rustup component add clippy rustfmt
+
+      # Zig compiles the bundled SQLite for the Kindle (ADR 0004).
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.17.0
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild@0.23.4
+      - uses: Swatinem/rust-cache@v2
+      - uses: extractions/setup-just@v4
 
       - run: just check
-      - run: just test
+      - run: cargo test
       - run: just package
-      - run: tar -tzvf target/package/kindle-series-enabler.kpkg
+
+      - name: Check the package
+        run: |
+          bin=target/armv7-unknown-linux-musleabihf/release/kindle-series-enabler
+          file "$bin" | grep -q 'ARM.*statically linked' || { echo "::error::not a static ARM binary"; exit 1; }
+          size=$(stat -c %s "$bin")
+          echo "binary size: $size bytes"
+          [ "$size" -lt 5000000 ] || { echo "::error::binary is over 5 MB"; exit 1; }
+          tar -tzvf target/package/kindle-series-enabler.kpkg
 
       - name: Publish the GitHub Release
         env:

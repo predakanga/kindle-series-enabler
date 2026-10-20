@@ -1,6 +1,7 @@
 # CI: lint and test on every push to main and every pull request, and check
-# that the package still builds. The release workflow (release.yml) repeats
-# these checks before publishing.
+# that the Kindle package still builds within its size budget. The release
+# workflow (release.yml) repeats these checks before publishing. Modelled on
+# Kindle Wireless Sync's CI.
 name: CI
 
 on:
@@ -17,17 +18,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - run: rustup component add clippy rustfmt
+      - uses: Swatinem/rust-cache@v2
       - uses: extractions/setup-just@v4
-      # shellcheck is preinstalled on ubuntu-latest; sqlite3 may not be.
-      - name: Install shellcheck and sqlite3
-        run: |
-          command -v shellcheck && command -v sqlite3 ||
-            { sudo apt-get update && sudo apt-get install -y shellcheck sqlite3; }
+      # fmt --check, clippy -D warnings, and shellcheck (preinstalled).
       - run: just check
-      - run: just test
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup target add armv7-unknown-linux-musleabihf
+      # Zig compiles the bundled SQLite for the Kindle (ADR 0004).
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.17.0
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild@0.23.4
+      - uses: Swatinem/rust-cache@v2
+      - uses: extractions/setup-just@v4
       - run: just package
-      - run: tar -tzvf target/package/kindle-series-enabler.kpkg
+      - name: Check the package
+        run: |
+          bin=target/armv7-unknown-linux-musleabihf/release/kindle-series-enabler
+          file "$bin" | grep -q 'ARM.*statically linked' || { echo "::error::not a static ARM binary"; exit 1; }
+          size=$(stat -c %s "$bin")
+          echo "binary size: $size bytes"
+          [ "$size" -lt 5000000 ] || { echo "::error::binary is over 5 MB"; exit 1; }
+          tar -tzvf target/package/kindle-series-enabler.kpkg
