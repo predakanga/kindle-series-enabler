@@ -1,0 +1,34 @@
+[package]
+name = "kindle-series-enabler"
+version = "0.0.0"
+edition = "2021"
+description = "Show the Kindle's Group series switch where Amazon doesn't offer it"
+license = "GPL-3.0-or-later"
+
+# The library keeps a short name for concise `use kse::...` paths; the
+# binary uses the package's full name.
+[lib]
+name = "kse"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kindle-series-enabler"
+path = "src/main.rs"
+
+[dependencies]
+# SQLite compiled in, so the device's sqlite3 doesn't matter (ADR 0004).
+rusqlite = { version = "0.40", features = ["bundled"] }
+# preserve_order keeps the search-command files' entries in order.
+serde_json = { version = "1", features = ["preserve_order"] }
+serde = "1"
+lexopt = "0.3"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
+panic = "abort"
+codegen-units = 1
