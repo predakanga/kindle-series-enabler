@@ -49,10 +49,11 @@ the compare links and commits. It refuses a dirty tree, a branch other than
 developer the commit, then (after asking) `just publish-release -y` tags
 `vX.Y.Z` and pushes. `.github/workflows/release.yml` checks, tests and
 packages, publishes the GitHub release with the changelog section as notes,
-and sends a `release` dispatch to `predakanga/kindle-apps` (`../kindle-apps`),
+and starts the publish workflow of `predakanga/kindle-apps` (`../kindle-apps`),
 which rebuilds the shared KPM index
 (`https://predakanga.github.io/kindle-apps/repo.json`; ADR 0005). The
-dispatch needs the `KINDLE_APPS_TOKEN` secret; without it the workflow
+step needs the `KINDLE_APPS_TOKEN` secret (Actions write on kindle-apps
+only); without it the workflow
 warns, and the index is rebuilt by hand from kindle-apps' Actions tab. The
 first release is 1.0.0.
 

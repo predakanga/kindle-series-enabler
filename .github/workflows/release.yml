@@ -73,9 +73,10 @@ jobs:
           gh release create "$GITHUB_REF_NAME" target/package/kindle-series-enabler.kpkg \
             --verify-tag --notes-file notes.md --title "$GITHUB_REF_NAME"
 
-      # A fine-grained token for kindle-apps only, with Contents read and
-      # write. Without it the release still stands; the index can be
-      # rebuilt by hand from kindle-apps' Actions tab.
+      # A fine-grained token for kindle-apps only, with Actions read and
+      # write: it can start the publish workflow but not change any files.
+      # Without it the release still stands; the index can be rebuilt by
+      # hand from kindle-apps' Actions tab.
       - name: Update the kindle-apps index
         env:
           GH_TOKEN: ${{ secrets.KINDLE_APPS_TOKEN }}
@@ -84,5 +85,5 @@ jobs:
             echo "::warning::KINDLE_APPS_TOKEN isn't set: run kindle-apps' Publish the index workflow by hand"
             exit 0
           fi
-          gh api repos/predakanga/kindle-apps/dispatches -f event_type=release \
-            -f "client_payload[repo]=$GITHUB_REPOSITORY" -f "client_payload[tag]=$GITHUB_REF_NAME"
+          gh workflow run publish.yml -R predakanga/kindle-apps \
+            -f repo="$GITHUB_REPOSITORY" -f tag="$GITHUB_REF_NAME"

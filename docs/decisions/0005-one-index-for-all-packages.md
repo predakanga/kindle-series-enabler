@@ -27,15 +27,17 @@ listing the packages.
   dependencies and platforms come from the `manifest.json` inside each
   `.kpkg`, so app repositories need nothing beyond their releases. The tag
   must match the manifest's version.
-- **Triggers:** a `repository_dispatch` (`release`) sent by each app's
-  release workflow, a push to `main` (a changed `packages.txt`), and
-  `workflow_dispatch` by hand. No schedule.
+- **Triggers:** `workflow_dispatch`, started by each app's release
+  workflow (with optional `repo` and `tag` inputs, only logged) or by
+  hand, and a push to `main` (a changed `packages.txt`). No schedule.
 
 **This repository:** the release workflow drops its `pages` job and,
-after publishing the release, sends the dispatch with the
-`KINDLE_APPS_TOKEN` secret: a fine-grained token for `kindle-apps` only,
-with Contents read and write (what the dispatch API needs). Without the
-secret it warns and the release still succeeds; the index can then be
+after publishing the release, starts kindle-apps' publish workflow
+(`gh workflow run`) with the `KINDLE_APPS_TOKEN` secret: a fine-grained
+token for `kindle-apps` only, with **Actions** read and write. That can
+start, re-run and cancel workflows but not change files, so the index is
+only ever built from what's committed in kindle-apps. Without the secret
+the step warns and the release still succeeds; the index can then be
 rebuilt by hand. `tools/kpm-index.sh` and `package/pages/` go, and the
 README points at the shared index.
 
@@ -45,6 +47,9 @@ Kindle Wireless Sync moves over in its own session (the developer,
 ## Alternatives considered
 - **An index per package** (as before): no tokens, but users add a
   repository for each package.
+- **`repository_dispatch`** (the first draft of this ADR): GitHub files it
+  under the Contents permission, and Contents write also allows pushing
+  to kindle-apps, so a leaked token could change what the index offers.
 - **A daily schedule** instead of, or as well as, the dispatch: no token,
   but GitHub disables scheduled workflows in quiet repositories and asks
   for them to be turned back on (the developer, 2026-10-20).
