@@ -89,10 +89,10 @@ change Amazon's settings itself.
 set on 2026-10-20:
 - ADR 0001 (**accepted** 2026-10-20): the package writes only the
   marketplace override. The user turns grouping on in Settings.
-- ADR 0002 (**accepted** 2026-10-20): `apply` runs from a one-shot boot job (logs to `/mnt/us`, or
-  `/var/local` if that fails), `;series` (logs to the screen) and `kpm
-  launch` (stdout). `install.sh` runs it once after setting up. There's no
-  listener.
+- ADR 0002 (**accepted** 2026-10-20): `apply` runs from a one-shot boot
+  job (logs to `/mnt/us`, or `/var/local` if that fails), `;series` (logs
+  to the screen) and `kpm launch` (stdout). `install.sh` runs it once
+  after setting up. There's no listener.
 - ADR 0003: files in `/var/local/kindle-series-enabler/`. The job and
   `;series` need a root filesystem write. `;series` goes in every command
   file that exists, as KMC does. Uninstall restores the override only if
