@@ -114,8 +114,9 @@ needed.
 `package/series-grouping.sh` sets exactly these two values (`just grouping
 [status|enable|disable]`). It was tested both ways on the device.
 
-From the disassembly, the Settings switch writes the UserDefaults row as
-well as the `dcc` value, which is harmless.
+The Settings switch writes the UserDefaults row as well as the `dcc` value
+(from the disassembly, and seen on the device on 2026-10-20), which is
+harmless.
 
 Undo (back to how it was found on the reference device):
 
@@ -167,6 +168,32 @@ does the shell tool: `lipc-wait-event -s 3 com.lab126.dynconfig
 dynamicConfigUpdated` subscribes and times out cleanly (exit 255). A
 package could listen for it, check whether either grouping key was in the
 list (or just check the values), and put them back.
+
+**Telling a push from the user (2026-10-20).** With the listener running
+(below), the developer turned "Group series" off and on again in Settings:
+- **No event arrived.** The listener does receive events: one sent with
+  `lipc-send-event` from a test source, to a listener started the same
+  way, came through with its parameters. So the Settings switch writes
+  `dcc` in-process, through `libdynconf`, and sends no
+  `dynamicConfigUpdated`.
+- `dcc series.grouping.enabled` got a new rowid (7986), and the
+  UserDefaults row `IGNITE_LIBRARY_NAMESPACE.IGNITE_SERIES_GROUPING_ENABLED_KEY`
+  came back (`1`). It had been deleted during the 2026-10-16 isolation
+  tests, and nothing had used the switch since.
+
+So two independent signals tell them apart:
+
+| Signal | Settings switch | Server push |
+|---|---|---|
+| `dynamicConfigUpdated` event | none | sent, naming the keys |
+| UserDefaults key | written to match | untouched |
+
+The second needs no event, so it also covers a key list cut off at the
+size limit. If `dcc` says `false` while UserDefaults says `1`, a push
+changed it. It only works once the UserDefaults key exists: a user who
+never touched the switch has none, and deregistration or Ignite's cleanup
+removes it. A package that sets `enabled` could write the key as well, as
+the switch does.
 
 **No refresh seen so far.** Because `properties` replaces on conflict,
 every write gives the row a new rowid, so rowids show the order of writes:
