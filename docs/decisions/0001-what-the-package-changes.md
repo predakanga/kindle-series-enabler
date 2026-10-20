@@ -61,9 +61,13 @@ plan, its Later 4, wanted one for a script inside another package).
 - After installing, the user turns on "Group series" in Settings. The
   README says where. On the reference device `enabled` started `false`, so
   this tap is needed there.
-- The override copies the list as it was when written. If a later firmware
-  adds marketplaces to `dcd`, the copy hides them. Only the device's own
-  marketplace matters, so that's harmless, but `status` shows both lists.
+- The override is a copy of the effective list at the moment `apply`
+  writes it, which is normally at install. Later runs find the marketplace
+  already listed and leave the row alone. It's only written again if
+  something (a push) replaces it with a list that doesn't include the
+  marketplace. So if a later firmware adds marketplaces to `dcd`, the copy
+  hides them. Only the device's own marketplace matters, so that's
+  harmless, but `status` shows both lists.
 - If `enabled` is already `true` (the `dcd` default, with no `dcc` row),
   grouping turns on as soon as the switch can be shown. That's Amazon's
   default, not something the package sets.
