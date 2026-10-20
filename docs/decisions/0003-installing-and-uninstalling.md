@@ -8,10 +8,16 @@
   (its ADR 0004 and 0012) keeps everything root runs in `/var/local`,
   because `/mnt/us` is reachable over USB, and because KPM deletes the
   package directory on every upgrade.
-- The upstart job and the two search-command files are on the read-only
-  root filesystem (`mntroot rw` to change them), and a firmware update
-  replaces them. KMC's patcher re-adds its own commands to both files
-  after an update, but not anyone else's (`device-hooks.md`).
+- Search commands live in up to three JSON files: `/app/kpp_app_cmds.json`
+  and `/usr/share/app/kpp_sys_cmds.json` on 5.20.1, and
+  `/usr/share/webkit-1.0/pillow/debug_cmds.json` on older firmware. It
+  isn't known which one each firmware's UI reads. KMC's patcher adds its
+  commands to every one of them that exists, and that's the only
+  established practice (`device-hooks.md`). After a firmware update, KMC
+  re-adds its own commands, but not anyone else's.
+- The upstart job and the command files are on the read-only root
+  filesystem (`mntroot rw` to change them), and a firmware update replaces
+  them.
 - KPPMainApp reads the command files only at startup.
 - KPM's hooks (`kpm-packaging.md`): install runs `install.sh`, which must be
   safe to run again. Upgrade runs `uninstall.sh upgrade`, then
@@ -25,15 +31,16 @@
    `/var/local/kindle-series-enabler/`, each to a temporary name and then
    `mv`, as Wireless Sync does.
 2. `mntroot rw`. Install the upstart job, and add `";series": "/bin/sh
-   /var/local/kindle-series-enabler/series.sh"` to both command files
-   (`register`, ADR 0004). Then `mntroot ro`, also on failure. If the root
-   filesystem was already writable, leave it writable.
+   /var/local/kindle-series-enabler/series.sh"` to **every one of the
+   three command files that exists**, as KMC does (`register`, ADR 0004).
+   Then `mntroot ro`, also on failure. If the root filesystem was already
+   writable, leave it writable.
 3. Run `apply`, so the switch appears without a reboot.
 4. Say that `;series` works after the next restart.
 
 **Uninstall** (`uninstall.sh`, not `upgrade`):
-1. `mntroot rw`. Remove `;series` from both files if its value is ours
-   (`unregister`), and remove the job. `mntroot ro`.
+1. `mntroot rw`. Remove `;series` from each command file where its value
+   is ours (`unregister`), and remove the job. `mntroot ro`.
 2. Put the override back (`restore`). Each time `apply` writes the
    override, it records the value it replaced (or that there was none) and
    the value it wrote, in `/var/local/kindle-series-enabler/state`. If the
@@ -56,8 +63,11 @@ replaces the files and keeps the state file.
 - **Restart the framework at install,** so `;series` works at once: KPM
   can itself be run from `;kpm`, as a child of KPPMainApp, and the restart
   could kill it mid-install. The switch works without a restart anyway.
-- **Only one of the command files:** it isn't known which one each
-  firmware reads. KMC writes both, so we do too.
+- **Only one of the command files** (say `/app/kpp_app_cmds.json`):
+  enough on 5.20.1 if KPPMainApp merges the two (untested), but it's
+  unknown for other firmware. Writing to every existing file, as KMC does,
+  is harmless: the same key with the same value.
+- **A fixed list of two files:** misses the pillow file on older firmware.
 - **Set `enabled` back to `false` on uninstall,** where the marketplace
   isn't supported: rejected by the developer.
 - **Always delete the override on uninstall:** wrong if a push set it.

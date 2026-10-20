@@ -1,6 +1,6 @@
 # 0001: What the package changes: the marketplace override, nothing else
 
-- Status: Proposed
+- Status: Accepted (2026-10-20)
 - Date: 2026-10-20
 
 ## Context

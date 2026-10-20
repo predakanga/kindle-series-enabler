@@ -6,9 +6,9 @@
 ## Context
 The package (ADRs 0001 to 0003) has to:
 - read and write rows in `appreg.db`, which running services hold open;
-- add and remove a key in two JSON files on the root filesystem. A broken
-  file would break every search command, and KMC's patcher with them
-  (`device-hooks.md`);
+- add and remove a key in up to three JSON files on the root filesystem.
+  A broken file would break every search command, and KMC's patcher with
+  them (`device-hooks.md`);
 - record the override's previous value in a small state file.
 
 What the device offers (`device-hooks.md`):
@@ -31,7 +31,8 @@ The developer prefers Rust (2026-10-20), as Kindle Wireless Sync uses
   `unregister` removes it only if its value is ours.
 - `restore`: ADR 0003.
 - Options for tests and development: `--appreg PATH`, `--state DIR`, and
-  `--commands FILE` (repeatable; by default both of the device's files).
+  `--commands FILE` (repeatable; by default whichever of the three
+  command files exist).
 
 How it works:
 - **SQLite:** `rusqlite` with `bundled`, so the device's `sqlite3` doesn't

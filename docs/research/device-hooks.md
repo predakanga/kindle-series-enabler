@@ -16,13 +16,25 @@ files, each one flat object mapping a command to a shell command line:
 Both are on the root filesystem (read-only ext3, so writing needs
 `mntroot rw`), and a firmware update replaces them.
 
-The KMC jailbreak adds `;kpm`, `;log` and `;kmclog` to **both** files. Its
-`/var/local/kmc/bin/kmc_system_patcher` parses each file as JSON, adds its
-keys and writes it back. KMC's `system_patches/patch_system.sh` runs the
-patcher (it's run again by the hotfix after an update). So a third
-party's key survives KMC re-patching, as long as the file stays valid
-JSON. **A broken file would break KMC's patcher, and probably every search
-command.**
+KindleModding's "Debug Commands" page (kindlemodding.org,
+`content/kindle-hacking/debug-commands.md` in
+github.com/KindleModding/kindlemodding.github.io) lists a third file,
+`/usr/share/webkit-1.0/pillow/debug_cmds.json`, from older firmware's
+pillow UI, and says it no longer exists. It isn't on the reference device.
+
+The KMC jailbreak adds `;kpm`, `;log` and `;kmclog` to **every one of the
+three files that exists**, and skips the rest. Its
+`/var/local/kmc/bin/kmc_system_patcher` (source:
+github.com/KindleModding/jb.sh, `system_patcher/main.c`) parses each file
+with cJSON, deletes and re-adds its three keys, prints the result
+(tab-indented) and writes it back in place (`r+`, then `ftruncate`). If a
+file doesn't parse, it prints it and moves on. KMC's
+`system_patches/patch_system.sh` runs the patcher, and the hotfix runs it
+again after an update. So a third party's key survives KMC re-patching, as
+long as the file stays valid JSON. **A broken file would break KMC's
+patcher, and probably every search command.** (KMC's older hotfix job,
+`install_debug_commands_kpp_app.sh` in github.com/KindleModding/Hotfix,
+inserted `;log` into `/app/kpp_app_cmds.json` with `sed` instead.)
 
 The values include arguments (`/app/tools/switchChrome.sh kpp 2`). KMC's
 `/var/local/kmc/sbin/kpm.sh`:
@@ -78,6 +90,12 @@ The values include arguments (`/app/tools/switchChrome.sh kpp 2`). KMC's
   `framework:javauser`, mode `775`.
 
 ## Boot jobs
+
+- `/mnt/us` is a FUSE mount (`fsp`) over the userstore. Upstart's
+  `filesystems_userstore` mounts it (and emits `mounted_userstore`) early,
+  long before `framework_ready`, but nothing makes a `start on
+  framework_ready` job wait for it. It can also be full, read-only, or
+  stuck if the FUSE daemon is. A boot job shouldn't need it.
 
 - KMC's `/etc/upstart/kmc.conf` is `start on framework_ready`, and only
   runs `/mnt/us/emergency.sh` if it exists. KMC says update persistence
