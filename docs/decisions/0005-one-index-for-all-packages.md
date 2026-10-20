@@ -1,6 +1,6 @@
 # 0005: One KPM index for all the developer's packages (kindle-apps)
 
-- Status: Proposed
+- Status: Accepted (2026-10-20)
 - Date: 2026-10-20
 
 ## Context

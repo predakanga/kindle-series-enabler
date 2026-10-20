@@ -103,7 +103,7 @@ The search-bar tests (`device-hooks.md`) showed that commands are read at
 startup, run as root, get the rest of the line as arguments, and do
 nothing if their target is missing.
 
-### Phase 3: Build and release
+### Phase 3: Build and release ✅ (2026-10-20)
 
 - ✅ The Rust binary (ADR 0004): `apply` (the default), `status`,
   `register`/`unregister` and `restore`, with tests against fixture
@@ -127,7 +127,8 @@ nothing if their target is missing.
   job and the files, and left grouping on. The root filesystem was
   read-only after each step. Fixed along the way: an abort on a closed
   stdout, `&gt;` in KPM's output, a multi-file `scp` crashing dropbear.
-- First release, **1.0.0** (developer, 2026-10-20; ask before publishing).
+- ✅ First release, **1.0.0** (2026-10-20), published by the developer and
+  listed in the shared kindle-apps index (ADR 0005, accepted 2026-10-20).
 
 ## Open questions
 
