@@ -1,6 +1,6 @@
 # 0002: When it runs, and how it reports
 
-- Status: Proposed
+- Status: Accepted (2026-10-20)
 - Date: 2026-10-20
 
 ## Context
