@@ -32,3 +32,4 @@ What this commits us to, and any follow-up work or risks.
 - [0002: When it runs, and how it reports](0002-when-it-runs.md)
 - [0003: Installing and uninstalling](0003-installing-and-uninstalling.md)
 - [0004: A Rust binary, with SQLite and a JSON parser built in](0004-a-rust-binary.md)
+- [0005: One KPM index for all the developer's packages (kindle-apps)](0005-one-index-for-all-packages.md)

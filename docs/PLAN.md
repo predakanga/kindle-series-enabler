@@ -19,9 +19,9 @@ change Amazon's settings itself.
 
 ## Requirements
 
-1. Installs, upgrades and uninstalls through KPM, with releases on GitHub
-   and a KPM index on GitHub Pages, as Wireless Sync does
-   (`docs/research/kpm-packaging.md`).
+1. Installs, upgrades and uninstalls through KPM, with releases on GitHub,
+   listed in the shared `kindle-apps` index (ADR 0005,
+   `docs/research/kpm-packaging.md`).
 2. No UI and no daemon: a one-shot boot job and a `;series` search-bar
    command (developer, 2026-10-20).
 3. Changes only what makes grouping available: one `dcc` row in

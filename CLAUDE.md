@@ -49,9 +49,12 @@ the compare links and commits. It refuses a dirty tree, a branch other than
 developer the commit, then (after asking) `just publish-release -y` tags
 `vX.Y.Z` and pushes. `.github/workflows/release.yml` checks, tests and
 packages, publishes the GitHub release with the changelog section as notes,
-and rebuilds the KPM index on GitHub Pages
-(`https://predakanga.github.io/kindle-series-enabler/repo.json`). The first
-release is 1.0.0.
+and sends a `release` dispatch to `predakanga/kindle-apps` (`../kindle-apps`),
+which rebuilds the shared KPM index
+(`https://predakanga.github.io/kindle-apps/repo.json`; ADR 0005). The
+dispatch needs the `KINDLE_APPS_TOKEN` secret; without it the workflow
+warns, and the index is rebuilt by hand from kindle-apps' Actions tab. The
+first release is 1.0.0.
 
 **CI:** `.github/workflows/ci.yml` runs `just check`, `cargo test` and
 `just package` (with Zig) on pushes to `main` and on pull requests.
@@ -66,9 +69,9 @@ release is 1.0.0.
   are the KPM hooks (ADR 0003), with `rootfs.sh` for `mntroot`; `boot.sh`,
   `series.sh` and `launch.sh` are the entry points (ADR 0002);
   `upstart/kindle-series-enabler.conf` is the boot job; `manifest.json.in`
-  takes its version from `Cargo.toml`; `pages/index.html` is the Pages site
-  template.
-- `tools/`: packaging, release, changelog notes and the KPM index.
+  takes its version from `Cargo.toml`.
+- `tools/`: packaging, release and changelog notes. The KPM index is built
+  by `predakanga/kindle-apps` (ADR 0005).
 - `tests/`: Rust tests against a fixture `appreg.db` built from the
   reference device's schema and values, and fixture command files.
 

@@ -37,7 +37,7 @@ With Wi-Fi on, in kterm or over SSH on the Kindle, add the repository once,
 then install:
 
 ```sh
-kpm add-repo https://predakanga.github.io/kindle-series-enabler/repo.json
+kpm add-repo https://predakanga.github.io/kindle-apps/repo.json
 kpm update
 kpm install kindle-series-enabler
 ```

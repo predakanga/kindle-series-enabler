@@ -45,7 +45,8 @@ entries and no macOS metadata. `tools/package.sh` handles both bsdtar
 `kpm install file:///x.kpkg` fails with "Could not resolve dependency
 graph" when the package is already installed, and `kpm upgrade` skips
 packages installed from a file. Upgrades from a **repository** index work.
-So users install from the KPM index on GitHub Pages, and an upgrade test
+So users install from the KPM index (the shared one built by
+`predakanga/kindle-apps`, ADR 0005), and an upgrade test
 serves the package from a temporary `file://` `repo.json` (`kpm add-repo`,
 `kpm update`, `kpm install`), removing the repo afterwards.
 
@@ -59,4 +60,5 @@ which only applies to indexed artifacts.
 and `artifacts[]` (`url`, `version`, `dependencies`,
 `supported_platforms`). KPM lists artifacts newest first and installs the
 first, so the index lists every release. KPM follows redirects, so GitHub
-Release assets work as artifact URLs.
+Release assets work as artifact URLs. One index can list any number of
+packages; KPM stores them per repository and ID.
