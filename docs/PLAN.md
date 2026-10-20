@@ -105,16 +105,20 @@ nothing if their target is missing.
 
 ### Phase 3: Build and release
 
-- The Rust binary (ADR 0004): `apply`, `status`, `register`/`unregister`
-  and `restore`, with tests against fixture databases and command files.
-  Measure its size.
-- The shell around it: `install.sh`, `uninstall.sh`, `launch.sh`,
-  `boot.sh`, `series.sh` and the upstart job, safe to run again. Move the
-  version to `Cargo.toml` and the tooling back to Wireless Sync's.
+- ✅ The Rust binary (ADR 0004): `apply` (the default), `status`,
+  `register`/`unregister` and `restore`, with tests against fixture
+  databases and command files. Built with `cargo zigbuild`: 1.55 MB static
+  (2026-10-20). `status` runs on the reference device.
+- ✅ The shell around it: `install.sh` (runs `apply` before touching the
+  root filesystem, so a Kindle where it can't work is left unchanged),
+  `uninstall.sh`, `rootfs.sh`, `launch.sh`, `boot.sh`, `series.sh` and the
+  upstart job. The version is in `Cargo.toml`, and the tooling and
+  workflows are back to Wireless Sync's, with Zig for the Kindle build.
+  Not yet run on the device; the CI workflows haven't run yet either.
 - The README: what it does, the risk, how to undo it by hand.
 - An install, upgrade (from a temporary repository) and uninstall test on
   the reference device.
-- First release, 0.1.0 (ask before publishing).
+- First release, **1.0.0** (developer, 2026-10-20; ask before publishing).
 
 ## Open questions
 

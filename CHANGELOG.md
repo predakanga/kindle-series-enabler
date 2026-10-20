@@ -8,4 +8,17 @@ one.
 
 ## [Unreleased]
 
+### Added
+- Shows the Library's **Group series** switch (Settings > Home and Library
+  > Library) in marketplaces where Amazon doesn't offer it, by adding this
+  Kindle's marketplace to the list of supported ones. Turn grouping on or
+  off with that switch.
+- Puts the switch back at every boot, in case an Amazon config update
+  removed it.
+- Type `;series` in the search bar to put it back by hand, with the result
+  shown on the screen, or `;series status` to see the values involved.
+  `;series` works from the first restart after installing.
+- Uninstalling removes the switch, and leaves grouping on or off as it was
+  set.
+
 [Unreleased]: https://github.com/predakanga/kindle-series-enabler/commits/main
