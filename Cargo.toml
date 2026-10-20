@@ -1,6 +1,6 @@
 [package]
 name = "kindle-series-enabler"
-version = "0.0.0"
+version = "1.0.0"
 edition = "2021"
 description = "Show the Kindle's Group series switch where Amazon doesn't offer it"
 license = "GPL-3.0-or-later"

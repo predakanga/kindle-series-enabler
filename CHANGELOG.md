@@ -8,6 +8,8 @@ one.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-20
+
 ### Added
 - Shows the Library's **Group series** switch (Settings > Home and Library
   > Library) in marketplaces where Amazon doesn't offer it, by adding this
@@ -21,4 +23,5 @@ one.
 - Uninstalling removes the switch, and leaves grouping on or off as it was
   set.
 
-[Unreleased]: https://github.com/predakanga/kindle-series-enabler/commits/main
+[Unreleased]: https://github.com/predakanga/kindle-series-enabler/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/predakanga/kindle-series-enabler/releases/tag/v1.0.0

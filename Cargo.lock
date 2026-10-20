@@ -142,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "kindle-series-enabler"
-version = "0.0.0"
+version = "1.0.0"
 dependencies = [
  "lexopt",
  "rusqlite",
