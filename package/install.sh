@@ -42,7 +42,12 @@ fi
 rootfs_rw
 echo "Installing the boot job and the ;series search command"
 put "$PKG/kindle-series-enabler.conf" "$JOB" 644
-"$DIR/kindle-series-enabler" register
+changes=$("$DIR/kindle-series-enabler" register)
+echo "$changes"
 /sbin/initctl reload-configuration 2>/dev/null || true
 
-echo "Installed. ;series works in the search bar after the next restart."
+# KPPMainApp reads the search commands only at startup.
+case $changes in
+    *": added"*) echo "Installed. ;series works in the search bar after the next restart." ;;
+    *) echo "Installed." ;;
+esac
