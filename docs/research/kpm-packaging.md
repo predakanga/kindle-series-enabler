@@ -21,6 +21,9 @@ github.com/gingrspacecadet/kpm is a different tool with the same name.
   files and its record, so the user can retry.
 - **Launch:** `kpm launch <id>` runs the package's `launch.sh`, if any.
 - After every install or uninstall, KPM starts a full library rescan.
+- **Hook output is shown HTML-escaped** (KPM 0.2.2, seen 2026-10-20): a
+  `>` printed by `install.sh` appeared as `&gt;`. Avoid `<`, `>` and `&`
+  in hook messages.
 - **Hooks inherit the umask** of the shell that ran `kpm`, which can be
   `077` over some SSH servers. Set `umask 022` in hooks that create files
   other users need to read.

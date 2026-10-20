@@ -55,8 +55,9 @@ impl fmt::Display for Applied {
             }
             Applied::Written { id, .. } => {
                 writeln!(f, "Added marketplace {id} to the list.")?;
-                writeln!(f, "Group series is now in Settings >")?;
-                write!(f, "Home and Library > Library.")
+                // No ">": KPM 0.2.2 shows hook output HTML-escaped.
+                writeln!(f, "Group series is now in Settings, under")?;
+                write!(f, "Home and Library, Library tab.")
             }
         }
     }
