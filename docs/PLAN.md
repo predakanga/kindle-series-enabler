@@ -53,7 +53,9 @@ change Amazon's settings itself.
    a timer?). Does a refresh set `series.grouping.enabled` back to `false`,
    or drop the marketplace override? Decides whether the package needs to
    re-apply the values, and how (an upstart job needs a root filesystem
-   write).
+   write). Also: **is there a notification when `dcc` is refreshed** (an
+   LIPC event, an upstart event, a file change) that the package could
+   react to?
 2. **Restoring what was there.** The `disable` command assumes the
    reference device's starting state (`enabled = false`, no override).
    Check what other devices start with, and whether recording the values at
