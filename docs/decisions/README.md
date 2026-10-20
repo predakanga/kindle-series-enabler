@@ -28,4 +28,7 @@ What this commits us to, and any follow-up work or risks.
 
 ## Index
 
-None yet.
+- [0001: What installing changes](0001-what-installing-changes.md)
+- [0002: What uninstalling restores](0002-what-uninstalling-restores.md)
+- [0003: After a server config push](0003-after-a-server-push.md)
+- [0004: A Rust binary, with SQLite built in](0004-a-rust-binary.md)

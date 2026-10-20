@@ -82,7 +82,11 @@ change Amazon's settings itself.
 
 ### Phase 2: Decide the package's behaviour
 
-Record each as an ADR in `docs/decisions/`.
+**Proposed (2026-10-20), awaiting review:** ADR 0001 (install turns
+grouping on and shows the switch, writing UserDefaults too), 0002
+(uninstall restores only rows still holding our values), 0003 (no daemon;
+`kpm launch` re-applies, using the UserDefaults comparison) and 0004 (a
+Rust binary with SQLite built in). The questions they answer:
 
 - What installing does: turn grouping on **and** show the Settings switch,
   or only show the switch and leave the choice to the user in Settings.
@@ -92,8 +96,8 @@ Record each as an ADR in `docs/decisions/`.
 - Confirmation: Wireless Sync's plan wanted its script to require the
   device's UUID as an argument. For a package the user installs on
   purpose, the install may be confirmation enough.
-- The shell-only implementation (no Rust binary), unless a later need
-  argues otherwise.
+- The implementation: the shell script, or a Rust binary that doesn't
+  depend on the `sqlite3` or `lipc-*` tools.
 
 ### Phase 3: Build and release
 
