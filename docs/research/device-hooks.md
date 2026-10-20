@@ -56,6 +56,17 @@ The values include arguments (`/app/tools/switchChrome.sh kpp 2`). KMC's
 - **It runs as root** (uid 0, gid `video`, groups `javausers`), as a child
   of `/app/bin/KPPMainApp`, in `/`, with a minimal environment (`PATH`,
   `LANG`, `LC_ALL`, `KINDLE_TZ`). So KMC's `su` isn't needed.
+- **A missing target is harmless (tested 2026-10-20).** With
+  `";ksesh": "/bin/sh /var/local/kse-missing/series.sh"` (a missing
+  script) and `";ksebin": "/var/local/kse-missing/series"` (a missing
+  executable), typing either just went back to the Home screen. There was
+  no error, no store search, the same KPPMainApp process kept running,
+  and it had no child processes left over. A short-lived second
+  `KPPMainApp` process (the fork that runs the command) appeared and
+  exited. This is what a `;series` left behind after uninstall looks like.
+- **Restarting the `framework` job doesn't avoid the "Application Error"
+  dialog** that `initctl restart kppmainapp` shows, and KPPMainApp takes
+  a while to come back.
 - **Nothing repaints afterwards.** FBInk's line stayed on the screen until
   something else redrew it. The first run's line was covered by the store
   search results, the second's stayed. Hence `kpm.sh`'s `xrefresh`.

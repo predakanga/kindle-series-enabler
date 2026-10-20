@@ -78,6 +78,8 @@ replaces the files and keeps the state file.
   stays in `appreg.db` until a push changes it. Reinstalling from KPM puts
   them back. The README says so.
 - After uninstall, a running KPPMainApp still knows `;series` until it
-  restarts. Typing it then just fails, because the script is gone.
+  restarts. Typing it then does nothing: tested with a missing script and
+  a missing executable, both just return to Home, with no error and no
+  crash (`device-hooks.md`, 2026-10-20).
 - If `/var/local/kindle-series-enabler/state` is lost, `restore` leaves the
   override alone.
