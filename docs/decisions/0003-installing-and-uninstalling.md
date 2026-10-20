@@ -1,6 +1,6 @@
 # 0003: Installing and uninstalling
 
-- Status: Proposed
+- Status: Accepted (2026-10-20)
 - Date: 2026-10-20
 
 ## Context

@@ -1,6 +1,6 @@
 # 0004: A Rust binary, with SQLite and a JSON parser built in
 
-- Status: Proposed
+- Status: Accepted (2026-10-20)
 - Date: 2026-10-20
 
 ## Context

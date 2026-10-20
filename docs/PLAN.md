@@ -83,16 +83,15 @@ change Amazon's settings itself.
    5.20.1, so it's off. Not pursued further (research note, "Quick
    Settings").
 
-### Phase 2: Decide the package's behaviour
+### Phase 2: Decide the package's behaviour ✅ (2026-10-20)
 
-**Proposed (2026-10-20), awaiting review**, for the scope the developer
-set on 2026-10-20:
-- ADR 0001 (**accepted** 2026-10-20): the package writes only the
-  marketplace override. The user turns grouping on in Settings.
-- ADR 0002 (**accepted** 2026-10-20): `apply` runs from a one-shot boot
-  job (logs to `/mnt/us`, or `/var/local` if that fails), `;series` (logs
-  to the screen) and `kpm launch` (stdout). `install.sh` runs it once
-  after setting up. There's no listener.
+All accepted on 2026-10-20, for the scope the developer set that day:
+- ADR 0001: the package writes only the marketplace override. The user
+  turns grouping on in Settings.
+- ADR 0002: `apply` runs from a one-shot boot job (logs to `/mnt/us`, or
+  `/var/local` if that fails), `;series` (logs to the screen) and `kpm
+  launch` (stdout). `install.sh` runs it once after setting up. There's no
+  listener.
 - ADR 0003: files in `/var/local/kindle-series-enabler/`. The job and
   `;series` need a root filesystem write. `;series` goes in every command
   file that exists, as KMC does. Uninstall restores the override only if
@@ -100,12 +99,18 @@ set on 2026-10-20:
 - ADR 0004: a Rust binary (`apply` by default), with SQLite and a JSON
   parser built in. Older firmware's `sqlite3` has no JSON functions.
 
-The search-bar test (`device-hooks.md`) showed that commands are read at
-startup, run as root, and get the rest of the line as arguments.
+The search-bar tests (`device-hooks.md`) showed that commands are read at
+startup, run as root, get the rest of the line as arguments, and do
+nothing if their target is missing.
 
 ### Phase 3: Build and release
 
-- Hooks as decided, safe to run again, with tests.
+- The Rust binary (ADR 0004): `apply`, `status`, `register`/`unregister`
+  and `restore`, with tests against fixture databases and command files.
+  Measure its size.
+- The shell around it: `install.sh`, `uninstall.sh`, `launch.sh`,
+  `boot.sh`, `series.sh` and the upstart job, safe to run again. Move the
+  version to `Cargo.toml` and the tooling back to Wireless Sync's.
 - The README: what it does, the risk, how to undo it by hand.
 - An install, upgrade (from a temporary repository) and uninstall test on
   the reference device.
@@ -113,7 +118,8 @@ startup, run as root, and get the rest of the line as arguments.
 
 ## Open questions
 
-- See Phase 1 and Phase 2.
+- See Phase 1 (still open: whether a push ever sets the override, the
+  boot-time writer, other devices and firmware).
 
 ## Later
 
