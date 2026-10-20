@@ -4,13 +4,12 @@
 [![Latest release](https://img.shields.io/github/v/release/predakanga/kindle-series-enabler)](https://github.com/predakanga/kindle-series-enabler/releases/latest)
 [![Licence: GPL-3.0-or-later](https://img.shields.io/badge/licence-GPL--3.0--or--later-blue)](LICENSE)
 
-Turn on the Kindle Library's built-in **series grouping** (one tile per
-series, with the books in order) in countries where Amazon doesn't offer
-it, such as Australia.
+Enables the Kindle Library's native **series grouping** in countries where
+Amazon doesn't offer it yet, such as Australia.
 
-The package shows Amazon's own **Group series** switch in Settings, which
-is normally hidden outside the countries Amazon has chosen. You then turn
-grouping on or off with that switch, like any other setting.
+The package does not implement anything itself, it just adds your country
+to the list of allowed markets. You can then enable series grouping in your
+Kindle's settings.
 
 > [!WARNING]
 > **Written with AI, and tested on one Kindle.**
