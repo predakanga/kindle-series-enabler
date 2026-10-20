@@ -62,9 +62,10 @@ table):
     A1VC38T7YXB528,ATVPDKIKX0DER,A1F83G8C2ARO7P,A1PA6795UKMFR9` (JP, US,
     UK, DE).
   - `dcc`: `marketplace.obfuscated.id = A39IBJ37TRP1C6` (AU) and
-    `series.grouping.enabled = false`. That `dcc` row sat among rows written
-    by a server config fetch, so it was probably set by Amazon's server
-    rather than by the device.
+    `series.grouping.enabled = false`. That row sat among `RAMP` rows, which
+    first suggested a server config fetch. It turned out to be a batch
+    written at boot (see "What refreshes `dcc`"), so where the `false` came
+    from is unknown.
 - **UserDefaults** (`/app/lib/libEReaderAppSDKShared.so`,
   `esdk::UserDefaultsImpl`) stores rows in `/var/local/user_defaults.db`,
   table `user_defaults`, with `Key = <namespace>.<key>`. The grouping flag
@@ -123,12 +124,84 @@ sqlite3 /var/local/appreg.db "update properties set value='false' where handlerI
 sqlite3 /var/local/appreg.db "delete from properties where handlerId='dcc' and name='series.grouping.supported.marketplaces';"
 ```
 
-## What might reset it (unconfirmed)
+## What refreshes `dcc` (2026-10-20)
 
-- `dcc` rows are written from the server's dynamic config, so a refresh
-  could set `series.grouping.enabled` back to `false` or drop the
-  marketplace override. What triggers a refresh, and which process writes
-  `dcc` rows, hasn't been looked at.
+Read from `/usr/bin/dynconfig` (30 KB, disassembled) and its upstart job,
+and checked against `appreg.db` on the reference device.
+
+**Who writes it.** The `dynconfig` daemon (`/etc/upstart/dynconfig.conf`,
+started with `lab126`, respawned if it dies). It does nothing on its own
+schedule. Amazon's server queues a **ToDo item** for the device. The ToDo
+service (`com.lab126.todo`) fetches it when it checks in, and passes it to
+dynconfig through the LIPC property `handleToDoItem`, as JSON with an `id`,
+a `topic` and a `payload`. The payload's `action` is `DOWNLOAD`, with a
+`url`. dynconfig downloads that file through `com.lab126.transfer` into a
+temporary `tmp-scfg-down-XXXXXX` file. (The `dequeue` and `obliterate`
+strings are commands it sends to the transfer service, not registry
+operations.) So a refresh happens only when Amazon queues one, and the
+device can't be made to ask for one.
+
+**How it applies a file: a merge.** The file is `key=value` lines:
+1. Copy every `dcc` row to a backup handler, `dcb`.
+2. For each line, set that `dcc` property (`RegSetPropertyValue`), and
+   collect the key names.
+3. If any step fails, copy `dcb` back over `dcc`. Either way, delete
+   `dcb` afterwards.
+4. Report the ToDo status to the server, and send the update event (below).
+
+Nothing in this path deletes `dcc` rows, so **keys missing from the file
+are left as they are**. The marketplace override survives a refresh
+unless the server's file itself sets
+`series.grouping.supported.marketplaces`. `series.grouping.enabled`
+survives unless the file sets that key. Some keys are treated as "known
+SCFG" and skip a ToDo verification step: `lang.store`,
+`marketplace.obfuscated.id`, `url.myk`, `url.mysn`, `url.store`,
+`url.website` and `wan.proxy.non_proxy_hosts.http`/`https`. Those form the
+marketplace's base config.
+
+**The notification.** After applying a file, dynconfig sends the LIPC
+event **`com.lab126.dynconfig` `dynamicConfigUpdated`**. Its parameters
+are an int (the number of keys set), then one string per key name, cut off
+when the event reaches LIPC's size limit. KPPMainApp subscribes to it. So
+does the shell tool: `lipc-wait-event -s 3 com.lab126.dynconfig
+dynamicConfigUpdated` subscribes and times out cleanly (exit 255). A
+package could listen for it, check whether either grouping key was in the
+list (or just check the values), and put them back.
+
+**No refresh seen so far.** Because `properties` replaces on conflict,
+every write gives the row a new rowid, so rowids show the order of writes:
+- The marketplace base config (`lang.store`, `url.*`,
+  `marketplace.obfuscated.id`, at rowids 4807 to 5199) has the same rowids
+  as in the backup from before any change. It hasn't been pushed again
+  since 2026-10-16.
+- The override, at 7611, is where `enable` wrote it on 2026-10-16, and
+  it's untouched.
+- The newest `dcc` row (7974) is `gdpr.dpc.setting.version`.
+- The device's logs only go back to the morning of 2026-10-20, and show no
+  dynconfig downloads.
+
+A listener has been logging every event from `com.lab126.dynconfig` and
+`com.lab126.todo`, with timestamps, to `/mnt/us/kse-config-events.log`
+since 2026-10-20 14:52. It stops at the next reboot.
+
+**An unexplained write at boot.** The last write to
+`series.grouping.enabled` (rowid 7665) falls inside a batch written at boot
+on 2026-10-16 (about 20:41). That batch also rewrote two `RAMP.features.*`
+`dcc` rows and the `reg_apps` app registrations. The backup shows the same
+batch, the same shape and the same gaps, from an earlier boot, then with
+`false`. So something re-writes `enabled` at boot with its current value.
+This hasn't been tracked down. `enabled` is the user's choice (the Settings
+switch writes it), so this only matters if that boot-time write could ever
+change the value. The `RAMP` keys aren't plain strings in any binary under
+`/usr`, `/app/bin` or `/app/lib`.
+
+**Other things that could undo it:**
+- Firmware updates ship the `dcd` defaults
+  (`/opt/var/local/reg/ServerConfig.db` holds the same three `dcd` grouping
+  rows). The override lives in `dcc`, so an update leaves it alone. But it's
+  a copy of the `dcd` list as it was at install, so it would hide any
+  marketplaces a later firmware adds to `dcd`. That only matters for
+  whether *this* device's marketplace is listed.
 - Both values survived one reboot (2026-10-16).
 - UserDefaults are wiped on deregistration, and Ignite's "Cleaning user
   preferences for library namespace" routine clears the UserDefaults key.

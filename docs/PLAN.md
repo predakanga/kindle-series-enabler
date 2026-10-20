@@ -48,7 +48,14 @@ change Amazon's settings itself.
 
 ### Phase 1: Research
 
-1. **What resets it.** Which process writes `dcc` rows in `appreg.db`, and
+1. **What resets it.** *Mostly answered (2026-10-20, research note "What
+   refreshes `dcc`"):* `dynconfig` merges server-pushed config files into
+   `dcc`, only when Amazon queues one, so keys a file doesn't mention
+   survive. After each push it sends `com.lab126.dynconfig`
+   `dynamicConfigUpdated` with the key names, and the shell can subscribe
+   to it. Still open: whether a real push ever includes the grouping keys
+   (a listener is logging events on the device), and what re-writes
+   `enabled` at boot. Original question: Which process writes `dcc` rows in `appreg.db`, and
    what triggers a server config refresh (boot, network up, registration,
    a timer?). Does a refresh set `series.grouping.enabled` back to `false`,
    or drop the marketplace override? Decides whether the package needs to
