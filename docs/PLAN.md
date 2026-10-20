@@ -74,9 +74,11 @@ change Amazon's settings itself.
    10th Gen on FW 5.17.1. Look for the same values there, and for devices
    with the library re-architecture, where UserDefaults holds the choice
    instead. A device in a supported marketplace needs nothing.
-5. **Quick Settings tile** (lowest priority). Why the
-   `group_series_library` tile doesn't appear even with the override
-   (starting points in the research note).
+5. **Quick Settings tile** (lowest priority). *Answered (2026-10-20):* the
+   legacy panel this device uses has no group-series tile; the newer
+   panel that would show it is gated by a feature with no config on
+   5.20.1, so it's off. Not pursued further (research note, "Quick
+   Settings").
 
 ### Phase 2: Decide the package's behaviour
 

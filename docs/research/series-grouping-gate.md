@@ -235,14 +235,69 @@ change the value. The `RAMP` keys aren't plain strings in any binary under
   Neither matters here, since the key has no effect on this device. On a
   device with the library re-architecture, it would.
 
-## Quick Settings (not investigated)
+## Quick Settings (2026-10-20)
 
-The Quick Settings tile still doesn't show with the override in place, so
-the tile list has another filter. Where to start in `KPPMainApp`:
-`QuickSettingsWidgetProvider::getIconPanelWidgetList` (0x1db4024), its
-constructor (0x1db4454, which references `group_series_library`), and
-`QuickSettingsWidgetFactory::getWidgetController`. The Hermes JS bundle
-(`/app/KPPMainApp/js/KPPMainApp.js.hbc`) may hold the widget list too.
+**Why there's no tile:** this device runs the legacy Quick Settings
+panel, whose tiles are hard-coded and don't include series grouping. The
+newer panel would show the tile, but a feature flag that's off on 5.20.1
+gates it.
+
+Read from `KPPMainApp` (native, disassembled) and its Hermes bundle
+`/app/KPPMainApp/js/KPPMainApp.js.hbc` (bytecode version 84, disassembled
+with P1 Security's `hermes-dec` 0.1.8, `hbc-disassembler`).
+
+**The native side offers the tile:**
+- `QuickSettingsWidgetProvider`'s constructor lists the icon-panel
+  widgets as (name, device-capability) pairs. `group_series_library` is
+  paired with an empty capability, so `getIconPanelWidgetList` always
+  includes it (others, such as `bluetooth`, need `devcap_is_available`).
+- `QuickSettingsDataProvider::getWidgetData` adds each widget whose
+  `shouldWidgetBeDisplayed()` and `shouldWidgetBeDisplayedInQuickSettings()`
+  both pass. For `GroupSeriesWidgetController` the first is
+  `GroupSeriesServiceProvider::shouldWidgetBeDisplayed()` (the marketplace
+  gate, which the override satisfies), and the second is the base class's
+  `return true`.
+
+**The JS picks one of two panels.** `QuickSettingsRouter` asks the native
+`isCarafeNavigationEnabled()`:
+- **false: `QuickSettingsWindow` / `QuickSettingsWidgets`,** the legacy
+  panel. It has one render function per tile: airplane, Wi-Fi, Bluetooth,
+  dark mode, sync, orientation lock, settings, k4k and screen saver (some
+  hidden by their own checks). There's **no group-series renderer**, so
+  native data for it is ignored. This matches the screen: Airplane,
+  Bluetooth, Dark Mode, Sync, All Settings.
+- **true: `QuickActionsWindow` / `QuickActionsToggles`,** the newer
+  panel. It renders a generic toggle (`renderToggleButton`) for each entry
+  in the native widget data, so it would show `group_series_library`.
+
+**What gates the newer panel.** `isCarafeNavigationEnabled()` asks
+`featurechecker::FeatureChecker` for feature **101**. The checker
+resolves a feature in this order:
+1. A per-feature flag file: if its path exists, return the configured
+   value ("Feature %d file-flag override: file '%s' exists").
+2. Another source, reached through a virtual call on a second member,
+   that wasn't traced.
+3. The feature's config: "enabled" by default, or a weblab ID whose
+   treatment decides.
+
+The configs are built in code, one entry per feature (a default, a
+weblab ID or field-test toggle name, an optional flag-file path such as
+`/var/local/ENABLE_KPP_CHROME`, then the feature number). 5.20.1's table
+jumps from 100 (`LegacyFormatMigrationTxtSupport`) to 104
+(`NativeStoreSearch`): **there's no entry for 101**, so it has no flag
+file and no weblab, and comes out "default disabled". Field-test toggles
+live in `/var/local/kft/field_test_toggles/<name>` (empty on this device),
+but they too need a name from the config.
+
+**So the tile can't be switched on through settings or files on 5.20.1,**
+as far as this goes. The options would be the untraced second source, or
+patching KPPMainApp (root filesystem; out of scope). Either way it means
+turning on a whole new Quick Settings UI that Amazon hasn't shipped on this
+firmware, not just one tile. The Settings switch covers the need.
+
+Restarting the UI (`initctl restart kppmainapp`, 2026-10-20) didn't
+change the panel. KPPMainApp logs only critical and error lines, so its
+info-level widget logging ("Adding widget data for [...]") isn't visible.
 
 ## Device notes
 
