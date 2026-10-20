@@ -4,10 +4,11 @@
 
 A KPM package for jailbroken Kindles that turns on the built-in Library's
 **series grouping** (one tile per series, in order) on devices whose
-marketplace Amazon doesn't offer it, such as Australia. It has **no UI**:
-installing and uninstalling the package are the controls. Whether it also
-offers a toggle (for the grouping itself, or for the marketplace override
-that shows the Settings switch) is undecided; see the open questions.
+marketplace Amazon doesn't offer it, such as Australia. It has **no UI**.
+It makes grouping *available* by showing Amazon's own "Group series"
+switch in Settings, and the user turns grouping on there. A one-shot job
+re-applies it at boot, and typing `;series` in the search bar does the
+same by hand.
 
 It was split out of
 [Kindle Wireless Sync](https://github.com/predakanga/kindle-wireless-sync)
@@ -21,12 +22,14 @@ change Amazon's settings itself.
 1. Installs, upgrades and uninstalls through KPM, with releases on GitHub
    and a KPM index on GitHub Pages, as Wireless Sync does
    (`docs/research/kpm-packaging.md`).
-2. No UI. No daemon unless research shows the setting gets reset and has
-   to be re-applied.
-3. Changes only what grouping needs: today that's two `dcc` rows in
-   `/var/local/appreg.db` (`docs/research/series-grouping-gate.md`). Never
-   writes `cc.db` or `ksdk.asset.db`.
-4. Uninstalling puts things back as they were.
+2. No UI and no daemon: a one-shot boot job and a `;series` search-bar
+   command (developer, 2026-10-20).
+3. Changes only what makes grouping available: one `dcc` row in
+   `/var/local/appreg.db` (`docs/research/series-grouping-gate.md`), plus
+   its own job and search command. Never writes `cc.db` or
+   `ksdk.asset.db`.
+4. Uninstalling removes what the package added. It leaves the user's own
+   grouping choice alone.
 5. The README says plainly that this changes an Amazon-side setting, and
    what that could mean.
 6. Reference device: Kindle Paperwhite 12th Gen on FW 5.20.1 (AU). Other
@@ -82,22 +85,21 @@ change Amazon's settings itself.
 
 ### Phase 2: Decide the package's behaviour
 
-**Proposed (2026-10-20), awaiting review:** ADR 0001 (install turns
-grouping on and shows the switch, writing UserDefaults too), 0002
-(uninstall restores only rows still holding our values), 0003 (no daemon;
-`kpm launch` re-applies, using the UserDefaults comparison) and 0004 (a
-Rust binary with SQLite built in). The questions they answer:
+**Proposed (2026-10-20), awaiting review**, for the scope the developer
+set on 2026-10-20:
+- ADR 0001: the package writes only the marketplace override. The user
+  turns grouping on in Settings.
+- ADR 0002: `apply` runs from a one-shot boot job (logs to a file),
+  `;series` (logs to the screen), `install.sh` and `kpm launch` (stdout).
+  There's no listener.
+- ADR 0003: files in `/var/local/kindle-series-enabler/`. The job and
+  `;series` need a root filesystem write. Uninstall restores the override
+  only if it's still ours, and leaves `enabled` alone.
+- ADR 0004: a Rust binary (`apply` by default), with SQLite and a JSON
+  parser built in. Older firmware's `sqlite3` has no JSON functions.
 
-- What installing does: turn grouping on **and** show the Settings switch,
-  or only show the switch and leave the choice to the user in Settings.
-- Whether there's a toggle besides Settings, and in what form with no UI
-  (a `kpm launch` script, a Library scriptlet, a KUAL entry).
-- Whether and how to re-apply after a reset (Phase 1, item 1).
-- Confirmation: Wireless Sync's plan wanted its script to require the
-  device's UUID as an argument. For a package the user installs on
-  purpose, the install may be confirmation enough.
-- The implementation: the shell script, or a Rust binary that doesn't
-  depend on the `sqlite3` or `lipc-*` tools.
+The search-bar test (`device-hooks.md`) showed that commands are read at
+startup, run as root, and get the rest of the line as arguments.
 
 ### Phase 3: Build and release
 

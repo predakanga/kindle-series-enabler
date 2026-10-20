@@ -28,7 +28,7 @@ What this commits us to, and any follow-up work or risks.
 
 ## Index
 
-- [0001: What installing changes](0001-what-installing-changes.md)
-- [0002: What uninstalling restores](0002-what-uninstalling-restores.md)
-- [0003: After a server config push](0003-after-a-server-push.md)
-- [0004: A Rust binary, with SQLite built in](0004-a-rust-binary.md)
+- [0001: What the package changes: the marketplace override, nothing else](0001-what-the-package-changes.md)
+- [0002: When it runs, and how it reports](0002-when-it-runs.md)
+- [0003: Installing and uninstalling](0003-installing-and-uninstalling.md)
+- [0004: A Rust binary, with SQLite and a JSON parser built in](0004-a-rust-binary.md)

@@ -1,67 +1,76 @@
-# 0004: A Rust binary, with SQLite built in
+# 0004: A Rust binary, with SQLite and a JSON parser built in
 
 - Status: Proposed
 - Date: 2026-10-20
 
 ## Context
-The current tool is a shell script (`package/series-grouping.sh`) that
-needs the `sqlite3` command-line tool. The reference device has it, as
-do the other devices seen so far, but nothing guarantees it on every
-firmware. The developer prefers a Rust tool (2026-10-20), as Kindle
-Wireless Sync is (its ADR 0006): one static armv7 musl binary with no
-runtime dependencies.
+The package (ADRs 0001 to 0003) has to:
+- read and write rows in `appreg.db`, which running services hold open;
+- add and remove a key in two JSON files on the root filesystem. A broken
+  file would break every search command, and KMC's patcher with them
+  (`device-hooks.md`);
+- record the override's previous value in a small state file.
 
-ADRs 0001 to 0003 need: reading and writing rows in two SQLite
-databases that running services hold open, a small state file, and
-plain-text output. No daemon (ADR 0003), so no LIPC.
+What the device offers (`device-hooks.md`):
+- `sqlite3` is there wherever KMC is (KMC uses it). But the developer's
+  testing found older firmware whose `sqlite3` has no JSON functions.
+- There's no `jq` and no `python3`, so the shell has nothing that parses
+  JSON.
+
+The developer prefers Rust (2026-10-20), as Kindle Wireless Sync uses
+(its ADR 0006).
 
 ## Decision
-**One static binary, `kindle-series-enabler`**, built for
+**One static binary, `kindle-series-enabler`,** built for
 `armv7-unknown-linux-musleabihf`, with these commands:
-- `status`: the values, where each comes from (`dcc`, `dcd` default or
-  missing), whether the switch is shown, and the original record.
-- `install`: record the originals (ADR 0002), then apply (ADR 0001).
-- `reapply`: put the override back, and set `dcc` `enabled` back to the
-  UserDefaults value only if the two disagree (ADR 0003).
-- `restore`: put back what's still ours, then delete the record (ADR
-  0002).
-- `--appreg PATH`, `--user-defaults PATH` and `--state DIR` options for
-  tests and development.
+- `apply` (**the default, with no arguments**): ADR 0001.
+- `status`: the marketplace, `series.grouping.supported`, the `dcc` and
+  `dcd` lists, whether the switch is shown, `enabled` (and whether that's
+  the `dcd` default), and the state file's record.
+- `register` / `unregister`: add or remove `;series` in the command files.
+  `unregister` removes it only if its value is ours.
+- `restore`: ADR 0003.
+- Options for tests and development: `--appreg PATH`, `--state DIR`, and
+  `--commands FILE` (repeatable; by default both of the device's files).
 
-The hooks become thin wrappers: `install.sh` runs `install`,
-`uninstall.sh` runs `restore` (except on upgrade), and `launch.sh` runs
-`reapply`. The binary runs from the KPM package directory. It's one-shot
-and nothing runs it during an upgrade, so it doesn't need copying to
-`/var/local` the way Wireless Sync's service does.
+How it works:
+- **SQLite:** `rusqlite` with `bundled`, so the device's `sqlite3` doesn't
+  matter. Every connection gets a 5-second busy timeout, and each change
+  is one statement or one transaction. Values are bound, not interpolated.
+- **JSON:** `serde_json` with `preserve_order`, so the other entries stay
+  in order. It refuses to write a file that isn't a JSON object of strings,
+  and leaves it untouched. It writes tab-indented, like KMC's patcher, to a
+  temporary file in the same directory, keeps the original's mode, then
+  renames it into place.
+- **Output:** plain lines on stdout (errors on stderr), and an exit code.
+  The shell entry points decide where the lines go (ADR 0002).
 
-**SQLite: `rusqlite` with its `bundled` feature,** which compiles SQLite
-into the binary. Every connection gets a busy timeout (5 s, like the
-script's `.timeout 5000`), because `appreg.db` is held open by running
-services. Each change is a single statement or one transaction.
+Shell stays for what KPM and upstart run: the hooks, `boot.sh`,
+`series.sh` and `launch.sh`, with `mntroot` and the FBInk loop.
 
-The repo layout follows Wireless Sync's: `cargo` with a `justfile`,
-`just check` (fmt and clippy, plus shellcheck for the hooks), `just test`
-(Rust tests against fixture databases built in the tests), and the
-version moves to `Cargo.toml`, so `tools/release.sh` and the release
-workflow go back to Wireless Sync's versions. The shell script stays
-until the binary replaces it, then goes.
+The repo follows Wireless Sync's layout: `cargo` with a `justfile`, `just
+check` (fmt, clippy and shellcheck), `just test` (Rust tests against
+fixture databases and command files). The version moves to `Cargo.toml`,
+so `tools/release.sh` and the release workflow go back to Wireless Sync's
+versions. `package/series-grouping.sh` stays as a dev tool until `status`
+replaces it.
 
 ## Alternatives considered
-- **Keep the shell script:** smallest and simplest, but depends on the
-  `sqlite3` CLI being present, and its SQL is built by string
-  interpolation (guarded today by checking the marketplace ID's
-  characters).
+- **Shell with `sqlite3`'s JSON functions:** works on 5.20.1, but older
+  firmware's `sqlite3` lacks them.
+- **Shell with a small awk parser** for the flat command files: no
+  toolchain, but it's our own JSON parser to get right, on a file whose
+  failure breaks every search command. The SQL is still built from
+  strings.
+- **Shell editing the files line by line with `sed`:** depends on the
+  exact layout KMC's patcher writes.
 - **Link the device's own `libsqlite3.so`:** a static musl binary can't
-  link it, and a dynamic glibc build would tie the binary to the
-  firmware's library versions.
-- **Write SQLite pages without the library:** no.
-- **The `sqlite` crate, or `sqlx`:** `rusqlite` is the usual choice, and
-  supports `bundled` directly.
+  link it, and a dynamic build would tie the binary to the firmware's
+  library versions.
 
 ## Consequences
-- Binary size: SQLite adds roughly 1 MB. To be measured with `just
-  size-kindle` before relying on that figure. KPM packages aren't
-  size-critical, but keep it well under 5 MB, as Wireless Sync does.
-- The package no longer depends on `sqlite3`, so the tests don't either
-  (CI drops the `sqlite3` install).
-- Shell stays for the KPM hooks, which KPM runs with `sh`.
+- Binary size: SQLite adds roughly 1 MB. Measure it with `just
+  size-kindle` before relying on that figure, and keep it well under 5 MB,
+  as Wireless Sync does.
+- The tests and CI no longer need `sqlite3`.
+- A cross-compiling toolchain, as in Wireless Sync.
